@@ -1,0 +1,108 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <math.h>
+
+typedef struct Node {
+    char value;
+    struct Node* left;
+    struct Node* right;
+} Node;
+
+
+Node* createNode(char value) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->value = value;
+    newNode->left = newNode->right = NULL;
+    return newNode;
+}
+
+
+int isOperator(char c) {
+    return (c == '+' || c == '-' || c == '*' || c == '/');
+}
+
+
+int precedence(char op) {
+    if (op == '+' || op == '-') return 1;
+    if (op == '*' || op == '/') return 2;
+    return 0;
+}
+
+
+Node* buildExpressionTree(char* infix) {
+    Node* operandStack[100];
+    char operatorStack[100];
+    int operandTop = -1, operatorTop = -1;
+
+    for (int i = 0; infix[i] != '\0'; i++) {
+        char ch = infix[i];
+
+        
+        if (isdigit(ch)) {
+            operandStack[++operandTop] = createNode(ch);
+        }
+        
+        else if (isOperator(ch)) {
+            while (operatorTop != -1 && precedence(operatorStack[operatorTop]) >= precedence(ch)) {
+                Node* opNode = createNode(operatorStack[operatorTop--]);
+                opNode->right = operandStack[operandTop--];
+                opNode->left = operandStack[operandTop--];
+                operandStack[++operandTop] = opNode;
+            }
+            operatorStack[++operatorTop] = ch;
+        }
+    }
+
+    while (operatorTop != -1) {
+        Node* opNode = createNode(operatorStack[operatorTop--]);
+        opNode->right = operandStack[operandTop--];
+        opNode->left = operandStack[operandTop--];
+        operandStack[++operandTop] = opNode;
+    }
+
+    return operandStack[operandTop];
+}
+
+
+void inOrderTraversal(Node* root) {
+    if (!root) return;
+    if (isOperator(root->value)) printf("(");
+    inOrderTraversal(root->left);
+    printf("%c", root->value);
+    inOrderTraversal(root->right);
+    if (isOperator(root->value)) printf(")");
+}
+
+int evaluate(Node* root){
+	if(root->value == '+'){
+		return evaluate(root->left) + evaluate(root->right);
+	}else if(root->value == '-'){
+		return evaluate(root->left) - evaluate(root->right);
+	}else if(root->value == '*'){
+		return evaluate(root->left) * evaluate(root->right);
+	}else if(root->value == '/'){
+		return evaluate(root->left) / evaluate(root->right);
+	}else if(root->value == '^'){
+		return (int) pow(evaluate(root->left), evaluate(root->right));
+	}else {
+		return root->value - '0';
+	}
+	
+}
+
+
+int main() {
+    char infix[] = "3+5*2-8"; 
+
+    Node* root = buildExpressionTree(infix);
+
+    printf("Infix Expression from Tree: ");
+    inOrderTraversal(root);
+    printf("\n");
+    
+    int res = evaluate(root);
+    printf("result : %d", res);
+
+    return 0;
+}
